@@ -36,7 +36,13 @@ fn main() {
         println!("{}", "Invalid path / File does not exist".red());
         return;
     }
+    search_file(file_path, pattern);
+}
 
+
+
+
+fn search_file(file_path: &Path, pattern: String) {
     let file = match File::open(file_path) {
         Ok(file) => file,
         Err(_) => {
