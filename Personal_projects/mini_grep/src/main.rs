@@ -37,7 +37,7 @@ fn main() {
         return;
     }
     println!(
-        "{:>20} {:>8}  {}",
+        "{:<40} {:>8}  {}",
         "File Path".yellow(),
         "Line No.".yellow(),
         "Text".yellow()
@@ -66,7 +66,10 @@ fn search_directory(file_path: &Path, pattern: &String) -> io::Result<()> {
             // println!("{:?} - inside search directory", path.display());
             search_file(&path, &pattern);
         } else if path.is_dir() {
-            let _ = search_directory(file_path, pattern);
+            match search_directory(&path, pattern) {
+                Ok(_) => {}
+                Err(_) => {}
+            };
         }
     }
     Ok(())
@@ -99,9 +102,9 @@ fn search_file(file_path: &Path, pattern: &String) {
 
         if lower_line.contains(pattern) {
             println!(
-                "{:>20} {:>8}  {}",
+                "{:<40} {:>8}  {}",
                 file_path.display(),
-                line_no.to_string().red(),
+                (line_no + 1).to_string().red(),
                 line.green()
             );
         }
