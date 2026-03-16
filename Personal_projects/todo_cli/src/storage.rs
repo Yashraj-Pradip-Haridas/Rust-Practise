@@ -1,8 +1,7 @@
 use std::{
-    fs::{self, File, OpenOptions},
-    io::{BufRead, BufReader, BufWriter, Write},
+    fs::{File, OpenOptions},
+    io::{BufRead, BufReader, Write},
     path::Path,
-    vec,
 };
 
 use crate::structures::Task;
@@ -90,7 +89,11 @@ pub fn read_file() -> Vec<Task> {
 }
 
 pub fn update_status(tasks: Vec<Task>) -> bool {
-    let mut file = match OpenOptions::new().write(true).open("data.json") {
+    let mut file = match OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open("data.json")
+    {
         Ok(file) => file,
         Err(_) => {
             return false;
