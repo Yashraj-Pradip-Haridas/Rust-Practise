@@ -7,7 +7,7 @@ use std::{
 };
 fn main() {
     let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
+    // println!("{:?}", args);
     let pattern = match args.get(1) {
         Some(pattern) => {
             let pattern = pattern.to_lowercase();
@@ -46,8 +46,8 @@ fn main() {
         search_file(file_path, &pattern);
     } else if file_path.is_dir() {
         match search_directory(file_path, &pattern) {
-            Ok(_) => println!("Success"),
-            Err(_) => println!("Failed"),
+            Ok(_) => println!("{}", "Success".green()),
+            Err(_) => println!("{}", "Failed".red()),
         };
     }
 }
@@ -57,7 +57,7 @@ fn search_directory(file_path: &Path, pattern: &String) -> io::Result<()> {
         let entry = match entry {
             Ok(entry) => entry,
             Err(_) => {
-                "Failed to access directory";
+                println!("{}", "Failed to access directory".red());
                 continue;
             }
         };
