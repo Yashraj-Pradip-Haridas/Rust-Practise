@@ -21,5 +21,40 @@ pub fn add_task() -> bool {
 
 pub fn print_all_tasks() {
     let data = storage::read_file();
-    println!("{:?}", data);
+    println!("{} - {}", "Task", "Status");
+    for i in data {
+        println!("{} - {}", i.name, i.status);
+    }
+}
+
+pub fn mark_completed() {
+    let mut data = storage::read_file();
+    println!("Enter the value to be updated: ");
+    let mut input = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read the input");
+
+    let input = input.trim().to_string();
+
+    for i in data.iter_mut() {
+        if i.name == input {
+            i.status = true;
+        }
+    }
+    storage::update_status(data);
+}
+
+pub fn remove_task() {
+    let mut data = storage::read_file();
+    println!("Enter the value to be removed: ");
+    let mut input = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read the input");
+
+    let input = input.trim().to_string();
+
+    data.retain(|value| value.name != input);
+    storage::update_status(data);
 }

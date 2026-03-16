@@ -88,3 +88,29 @@ pub fn read_file() -> Vec<Task> {
     }
     tasks
 }
+
+pub fn update_status(tasks: Vec<Task>) -> bool {
+    let mut file = match OpenOptions::new().write(true).open("data.json") {
+        Ok(file) => file,
+        Err(_) => {
+            return false;
+        }
+    };
+    for task in tasks {
+        // serializing the struct to json
+        let json_string = match serde_json::to_string(&task) {
+            Ok(json_string) => json_string,
+            Err(_) => {
+                println!("Failed to serialize");
+                continue;
+            }
+        };
+
+        // writing json string followed by new line character
+        match writeln!(&mut file, "{}", json_string) {
+            Ok(_) => {}
+            Err(_) => continue,
+        };
+    }
+    true
+}

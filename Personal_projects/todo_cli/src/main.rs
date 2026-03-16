@@ -11,7 +11,7 @@ fn main() {
     }
     loop {
         println!(
-            "Please enter your choice: \n 1. Create new task \n 2. View all tasks \n 3. Update task \n 4.exit"
+            "Please enter your choice: \n 1. Create new task \n 2. View all tasks \n 3. Update task \n 4. Remove task \n 5. Exit"
         );
 
         let mut input = String::new();
@@ -35,13 +35,16 @@ fn main() {
                 commands::print_all_tasks();
             }
             3 => {
-                println!("Yet to be implemented");
+                commands::mark_completed();
             }
             4 => {
+                commands::remove_task();
+            }
+            5 => {
                 break;
             }
             _ => {
-                println!("Yet to be implemented");
+                continue;
             }
         }
     }
