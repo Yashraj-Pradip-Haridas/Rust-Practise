@@ -43,6 +43,10 @@ pub fn mark_completed() {
         }
     }
     storage::update_status(data);
+    // better version
+    //     if let Some(task) = data.iter_mut().find(|t| t.name == input) {
+    //     task.status = true;
+    // }
 }
 
 pub fn remove_task() {
