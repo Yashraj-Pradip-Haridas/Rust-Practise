@@ -4,6 +4,7 @@ use std::{
     fs::{self, DirEntry, File},
     io::{self, BufRead, BufReader},
     path::Path,
+    sync::mpsc,
     thread,
 };
 fn main() {
@@ -56,11 +57,16 @@ fn main() {
 }
 
 fn search_directory(file_path: &Path, pattern: &str) -> io::Result<()> {
+    let (tx, rx) = mpsc::channel();
     thread::scope(|s| {
         for entry in match fs::read_dir(file_path) {
             Ok(file_path) => file_path,
-            Err(_) => return,
+            Err(_) => {
+                println!("Failed to read the file");
+                return;
+            }
         } {
+            let tx = tx.clone();
             let entry: DirEntry = match entry {
                 Ok(entry) => entry,
                 Err(_) => {
@@ -71,7 +77,7 @@ fn search_directory(file_path: &Path, pattern: &str) -> io::Result<()> {
             let path = entry.path();
             if path.is_file() {
                 s.spawn(move || {
-                    search_file(&path, &pattern);
+                    tx.send(search_file(&path, &pattern)).unwrap();
                 });
                 // println!("{:?} - inside search directory", path.display());
             } else if path.is_dir() {
@@ -82,16 +88,29 @@ fn search_directory(file_path: &Path, pattern: &str) -> io::Result<()> {
             }
         }
     });
+    let results: Vec<_> = rx.try_iter().collect();
+    for result in results {
+        // println!("{:?}", result);
+        for (path, line, text) in result {
+            println!(
+                "{:<40} {:>8}  {}",
+                path,
+                line.to_string().red(),
+                text.green()
+            );
+        }
+    }
     Ok(())
 }
 
-fn search_file(file_path: &Path, pattern: &str) {
+fn search_file(file_path: &Path, pattern: &str) -> Vec<(String, usize, String)> {
     // println!("{:?} - inside search file", file_path.display());
+    let mut match_data = Vec::new();
     let file = match File::open(file_path) {
         Ok(file) => file,
         Err(_) => {
             println!("{}", "Failed to open the file".red());
-            return;
+            return match_data;
         }
     };
 
@@ -111,12 +130,8 @@ fn search_file(file_path: &Path, pattern: &str) {
         let lower_line = line.to_lowercase();
 
         if lower_line.contains(pattern) {
-            println!(
-                "{:<40} {:>8}  {}",
-                file_path.display(),
-                (line_no + 1).to_string().red(),
-                line.green()
-            );
+            match_data.push((file_path.display().to_string(), line_no + 1, line));
         }
     }
+    match_data
 }
