@@ -76,8 +76,9 @@ fn search_directory(file_path: &Path, pattern: &str) -> io::Result<()> {
             };
             let path = entry.path();
             if path.is_file() {
+                let value = tx.clone();
                 s.spawn(move || {
-                    tx.send(search_file(&path, &pattern)).unwrap();
+                    value.send(search_file(&path, &pattern)).unwrap();
                 });
                 // println!("{:?} - inside search directory", path.display());
             } else if path.is_dir() {
@@ -87,8 +88,9 @@ fn search_directory(file_path: &Path, pattern: &str) -> io::Result<()> {
                 };
             }
         }
+        drop(tx);
     });
-    let results: Vec<_> = rx.try_iter().collect();
+    let results: Vec<_> = rx.iter().collect();
     for result in results {
         // println!("{:?}", result);
         for (path, line, text) in result {
