@@ -1,9 +1,10 @@
 use colored::Colorize;
 use std::{
     env,
-    fs::{self, File},
+    fs::{self, DirEntry, File},
     io::{self, BufRead, BufReader},
     path::Path,
+    thread,
 };
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -46,36 +47,45 @@ fn main() {
         search_file(file_path, &pattern);
     } else if file_path.is_dir() {
         match search_directory(file_path, &pattern) {
-            Ok(_) => println!("{}", "Success".green()),
-            Err(_) => println!("{}", "Failed".red()),
+            Ok(_) => {}
+            Err(_) => {
+                println!("{}", "Failed to enter directory".red());
+            }
         };
     }
 }
 
-fn search_directory(file_path: &Path, pattern: &String) -> io::Result<()> {
-    for entry in fs::read_dir(file_path)? {
-        let entry = match entry {
-            Ok(entry) => entry,
-            Err(_) => {
-                println!("{}", "Failed to access directory".red());
-                continue;
-            }
-        };
-        let path = entry.path();
-        if path.is_file() {
-            // println!("{:?} - inside search directory", path.display());
-            search_file(&path, &pattern);
-        } else if path.is_dir() {
-            match search_directory(&path, pattern) {
-                Ok(_) => {}
-                Err(_) => {}
+fn search_directory(file_path: &Path, pattern: &str) -> io::Result<()> {
+    thread::scope(|s| {
+        for entry in match fs::read_dir(file_path) {
+            Ok(file_path) => file_path,
+            Err(_) => return,
+        } {
+            let entry: DirEntry = match entry {
+                Ok(entry) => entry,
+                Err(_) => {
+                    println!("{}", "Failed to access directory".red());
+                    continue;
+                }
             };
+            let path = entry.path();
+            if path.is_file() {
+                s.spawn(move || {
+                    search_file(&path, &pattern);
+                });
+                // println!("{:?} - inside search directory", path.display());
+            } else if path.is_dir() {
+                match search_directory(&path, pattern) {
+                    Ok(_) => {}
+                    Err(_) => {}
+                };
+            }
         }
-    }
+    });
     Ok(())
 }
 
-fn search_file(file_path: &Path, pattern: &String) {
+fn search_file(file_path: &Path, pattern: &str) {
     // println!("{:?} - inside search file", file_path.display());
     let file = match File::open(file_path) {
         Ok(file) => file,
