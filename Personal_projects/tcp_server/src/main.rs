@@ -1,8 +1,7 @@
 use std::{
     io::{BufRead, BufReader, Write},
-    mem,
     net::{TcpListener, TcpStream},
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{Arc, Mutex},
     thread,
 };
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -42,14 +41,45 @@ fn handle_client(
             break;
         }
         let response = address.to_string() + " :" + &body_buffer;
-        let output = connections_handle.lock().unwrap();
+        // let data_output;
+        // {
+        //     let output = connections_handle.lock().unwrap();
+        //     data_output = &output.iter().clone();
+        // }
+        // 1. Lock and create a list of clones manually
+        let data_output: Vec<TcpStream> = {
+            let output = connections_handle.lock().unwrap();
+            output
+                .iter()
+                .filter_map(|s| s.try_clone().ok()) // Safely clone each stream
+                .collect()
+        };
+        let address = stream.peer_addr()?;
         // println!("Mutex value is : {:?}", *output)
-        for mut i in &*output {
-            if i.peer_addr()? != stream.peer_addr()? {
-                let _ = i.write_all(response.as_bytes());
+        for mut conn in data_output {
+            if let Ok(recipient_addr) = conn.peer_addr() {
+                if recipient_addr != address {
+                    let _ = conn.write_all(response.as_bytes());
+                }
             }
         }
     }
     println!("{}", "Client Disconnected");
-    Ok(())
+    {
+        let mut vec_conns = connections_handle.lock().unwrap();
+
+        // Get the target address once to avoid repeated syscalls in the loop
+        if let Ok(target_addr) = stream.peer_addr() {
+            if let Some(index) = vec_conns.iter().position(|x| {
+                x.peer_addr()
+                    .map(|addr| addr == target_addr)
+                    .unwrap_or(false)
+            }) {
+                // Use swap_remove for O(1) performance if order is not critical
+                vec_conns.swap_remove(index);
+            }
+        }
+
+        Ok(())
+    }
 }
