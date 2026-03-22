@@ -41,11 +41,12 @@ fn handle_client(
         if data == 0 {
             break;
         }
+        let response = address.to_string() + " :" + &body_buffer;
         let output = connections_handle.lock().unwrap();
         // println!("Mutex value is : {:?}", *output)
         for mut i in &*output {
             if i.peer_addr()? != stream.peer_addr()? {
-                let _ = i.write_all(body_buffer.as_bytes());
+                let _ = i.write_all(response.as_bytes());
             }
         }
     }
