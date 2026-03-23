@@ -1,11 +1,11 @@
+use crate::{SHARED_DATA, storage::write_to_file};
 use std::{io::Write, net::TcpStream};
-
-use crate::SHARED_DATA;
 
 pub fn handle_commands(
     command: String,
     mut stream: &TcpStream,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let str_command = command.clone();
     let command: Vec<&str> = command.split_whitespace().collect();
     if command.len() < 1 {
         return Err("No command found".into());
@@ -15,21 +15,22 @@ pub fn handle_commands(
             if command.len() < 2 || command[1].trim().is_empty() {
                 return Err("Key not found".into());
             }
-            println!("Entered the get function");
+            // println!("Entered the get function");
             let mut out_value = get_key_value_pair(command[1]);
             if out_value.is_empty() {
                 out_value = "(nil)".to_string();
             }
-            println!(" Value: {}", out_value);
+            // println!(" Value: {}", out_value);
             stream.write_all((out_value + "\n").as_bytes())?;
         }
         "SET" => {
-            println!("Entered the set function");
+            // println!("Entered the set function");
             if command.len() < 3 || command[1].trim().is_empty() || command[2].trim().is_empty() {
                 return Err("Key/Value not found".into());
             }
             set_key_value_pair(command[1], command[2]);
-            stream.write_all(String::from("Ok\n").as_bytes())?;
+            stream.write_all(String::from("OK\n").as_bytes())?;
+            write_to_file("data.txt".to_string(), str_command)?;
         }
         "DEL" => {
             if command.len() < 2 || command[1].trim().is_empty() {
@@ -37,8 +38,9 @@ pub fn handle_commands(
             }
             match del_key_value_pair(command[1]) {
                 Some(val) => {
-                    println!("Removed value: {}", val);
+                    // println!("Removed value: {}", val);
                     stream.write_all((val + "\n").as_bytes())?;
+                    write_to_file("data.txt".to_string(), str_command)?;
                 }
                 None => {
                     println!("No value found");
@@ -51,17 +53,18 @@ pub fn handle_commands(
             return Err("Invalid command".into());
         }
     }
+
     Ok(())
 }
 
-fn set_key_value_pair(key: &str, value: &str) {
+pub fn set_key_value_pair(key: &str, value: &str) {
     {
         let mut data = SHARED_DATA.lock().unwrap();
         data.insert(key.to_string(), value.to_string());
     }
 }
 
-fn get_key_value_pair(key: &str) -> String {
+pub fn get_key_value_pair(key: &str) -> String {
     let data = SHARED_DATA.lock().unwrap();
     let value = match data.get(key) {
         Some(value) => value.clone(),
@@ -70,7 +73,7 @@ fn get_key_value_pair(key: &str) -> String {
     value
 }
 
-fn del_key_value_pair(key: &str) -> Option<String> {
+pub fn del_key_value_pair(key: &str) -> Option<String> {
     let mut data = SHARED_DATA.lock().unwrap();
     data.remove(key)
 }

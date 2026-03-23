@@ -5,16 +5,16 @@ use std::{
 };
 pub fn handle_client(stream: TcpStream) -> Result<(), Box<dyn std::error::Error>> {
     let mut buff = BufReader::new(&stream);
-    let address = stream.peer_addr()?;
+    // let address = stream.peer_addr()?;
     loop {
         let mut body_buffer = String::new();
         let data = buff.read_line(&mut body_buffer)?;
         // println!("Entered thread {}", address);
-        println!("{}: {}", address, body_buffer.trim());
+        // println!("{}: {}", address, body_buffer.trim());
         if data == 0 {
             break;
         }
-        if body_buffer == "EXIT".trim().to_string() {
+        if body_buffer.trim() == "EXIT".to_string() {
             break;
         }
 
