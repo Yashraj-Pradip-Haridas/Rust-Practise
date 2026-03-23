@@ -41,11 +41,7 @@ fn handle_client(
             break;
         }
         let response = address.to_string() + " :" + &body_buffer;
-        // let data_output;
-        // {
-        //     let output = connections_handle.lock().unwrap();
-        //     data_output = &output.iter().clone();
-        // }
+
         // 1. Lock and create a list of clones manually
         let data_output: Vec<TcpStream> = {
             let output = connections_handle.lock().unwrap();
