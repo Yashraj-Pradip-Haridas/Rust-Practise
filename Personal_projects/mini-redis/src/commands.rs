@@ -1,4 +1,7 @@
-use crate::{SHARED_DATA, storage::write_to_file};
+use crate::{
+    SHARED_DATA,
+    storage::{clear_log_file, create_snapshot, write_to_file},
+};
 use std::{io::Write, net::TcpStream};
 
 pub fn handle_commands(
@@ -47,6 +50,13 @@ pub fn handle_commands(
                     stream.write_all("(nil)\n".as_bytes())?;
                 }
             };
+        }
+        "SNAPSHOT" => {
+            if command.len() < 1 || command[0].trim().is_empty() {
+                return Err("Key not found".into());
+            }
+            create_snapshot("snapshot.json".to_string())?;
+            clear_log_file("data.txt".to_string())?;
         }
         _ => {
             stream.write_all("Invalid command \n".as_bytes())?;

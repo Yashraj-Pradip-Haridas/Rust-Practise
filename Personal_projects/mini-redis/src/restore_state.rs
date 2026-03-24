@@ -1,12 +1,34 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
 };
 
-use crate::commands::{del_key_value_pair, set_key_value_pair};
+use crate::{
+    SHARED_DATA,
+    commands::{del_key_value_pair, set_key_value_pair},
+    storage::create_file,
+};
+
+fn fetch_hashmap(file_name: String) -> Result<(), Box<dyn std::error::Error>> {
+    let path = Path::new(&file_name);
+    if !path.exists() {
+        create_file("snapshot.json".to_string())?;
+        println!("Created snapshot.json");
+    }
+    let file = File::open(file_name)?;
+    let reader = BufReader::new(file);
+    let data: HashMap<String, String> = serde_json::from_reader(reader)?;
+    {
+        let mut mutex_data = SHARED_DATA.lock().unwrap();
+        *mutex_data = data.clone();
+    }
+    Ok(())
+}
 
 pub fn get_state(file_path: String) -> Result<(), Box<dyn std::error::Error>> {
+    fetch_hashmap("snapshot.json".to_string())?;
     let path = Path::new(&file_path);
     if !path.exists() {
         return Err("Path not found".into());
@@ -46,6 +68,7 @@ pub fn get_state(file_path: String) -> Result<(), Box<dyn std::error::Error>> {
                 };
             }
             _ => {
+                println!("Invalid command found");
                 continue;
                 // return Err("Invalid command".into());
             }
