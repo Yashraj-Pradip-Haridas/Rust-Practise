@@ -1,3 +1,8 @@
+mod enum_in_vecs;
+mod hashmaps;
+mod strings;
+mod vector_iterations;
+
 fn main() {
     println!("Hello, world!");
 

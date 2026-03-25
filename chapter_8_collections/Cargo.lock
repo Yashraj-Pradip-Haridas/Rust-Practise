@@ -5,3 +5,12 @@ version = 4
 [[package]]
 name = "chapter_8_collections"
 version = "0.1.0"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "unicode-segmentation"
+version = "1.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da36089a805484bcccfffe0739803392c8298778a2d2f09febf76fac5ad9025b"
