@@ -9,7 +9,8 @@ pub fn handle_commands(
     mut stream: &TcpStream,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let str_command = command.clone();
-    let command: Vec<&str> = command.split_whitespace().collect();
+    let command: Vec<&str> = command.trim().splitn(3, ' ').collect();
+    // println!("{:?}", command);
     if command.len() < 1 {
         return Err("No command found".into());
     }
@@ -20,16 +21,20 @@ pub fn handle_commands(
             }
             // println!("Entered the get function");
             let mut out_value = get_key_value_pair(command[1]);
+            println!(" Value: {}", out_value);
             if out_value.is_empty() {
                 out_value = "(nil)".to_string();
             }
-            // println!(" Value: {}", out_value);
             stream.write_all((out_value + "\n").as_bytes())?;
         }
         "SET" => {
             // println!("Entered the set function");
             if command.len() < 3 || command[1].trim().is_empty() || command[2].trim().is_empty() {
                 return Err("Key/Value not found".into());
+            }
+            if command[2].len() > 50 {
+                stream.write_all("Please enter smaller value\n".as_bytes())?;
+                return Err("Input out of size".into());
             }
             set_key_value_pair(command[1], command[2]);
             stream.write_all(String::from("OK\n").as_bytes())?;
@@ -57,6 +62,7 @@ pub fn handle_commands(
             }
             create_snapshot("snapshot.json".to_string())?;
             clear_log_file("data.txt".to_string())?;
+            stream.write_all("Snapshot successful\n".as_bytes())?;
         }
         _ => {
             stream.write_all("Invalid command \n".as_bytes())?;

@@ -8,18 +8,20 @@ use std::{
 use crate::{
     SHARED_DATA,
     commands::{del_key_value_pair, set_key_value_pair},
-    storage::create_file,
 };
 
 fn fetch_hashmap(file_name: String) -> Result<(), Box<dyn std::error::Error>> {
     let path = Path::new(&file_name);
     if !path.exists() {
-        create_file("snapshot.json".to_string())?;
-        println!("Created snapshot.json");
+        println!("No snapshot found");
+        return Err("No previous snapshot found".into());
     }
     let file = File::open(file_name)?;
     let reader = BufReader::new(file);
     let data: HashMap<String, String> = serde_json::from_reader(reader)?;
+    if data.is_empty() {
+        return Err("No previous snapshot found".into());
+    }
     {
         let mut mutex_data = SHARED_DATA.lock().unwrap();
         *mutex_data = data.clone();
@@ -28,9 +30,17 @@ fn fetch_hashmap(file_name: String) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub fn get_state(file_path: String) -> Result<(), Box<dyn std::error::Error>> {
-    fetch_hashmap("snapshot.json".to_string())?;
+    match fetch_hashmap("snapshot.json".to_string()) {
+        Ok(_) => {
+            println!("Snapshot loaded successfully");
+        }
+        Err(_) => {
+            println!("No snapshot found");
+        }
+    };
     let path = Path::new(&file_path);
     if !path.exists() {
+        println!("File does not exist");
         return Err("Path not found".into());
     }
     let file = File::open(path)?;
@@ -41,7 +51,8 @@ pub fn get_state(file_path: String) -> Result<(), Box<dyn std::error::Error>> {
         if line.trim().is_empty() {
             continue;
         }
-        let command: Vec<&str> = line.split_whitespace().collect();
+        let command: Vec<&str> = line.trim().splitn(3, ' ').collect();
+        // println!("{:?}", command);
         if command.len() < 1 {
             return Err("No command found".into());
         }

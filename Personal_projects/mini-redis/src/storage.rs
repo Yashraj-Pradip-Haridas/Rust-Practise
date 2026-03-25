@@ -1,10 +1,8 @@
 use std::{
     fs::{File, OpenOptions},
-    io::{BufWriter, Seek, Write},
+    io::{BufWriter, Write},
     path::Path,
 };
-
-use serde::de::value::Error;
 
 use crate::SHARED_DATA;
 
